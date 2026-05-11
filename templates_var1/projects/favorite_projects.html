@@ -22,6 +22,17 @@
         {% include 'includes/empty-project-card.html' with empty_title="Пока нет избранных проектов" empty_message="Добавляйте проекты в избранное, чтобы не потерять их" button_link="/projects/list" button_text="Посмотреть проекты" %}
         {% endfor %}
     </div>
+    {% if projects.has_other_pages %}
+    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+        {% if projects.has_previous %}
+        <a href="?page={{ projects.previous_page_number }}">Назад</a>
+        {% endif %}
+        <span>Страница {{ projects.number }} из {{ projects.paginator.num_pages }}</span>
+        {% if projects.has_next %}
+        <a href="?page={{ projects.next_page_number }}">Вперёд</a>
+        {% endif %}
+    </div>
+    {% endif %}
 
     {% include 'includes/project-fav-toggle.js' %}
 </div>

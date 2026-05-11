@@ -10,6 +10,15 @@
 </head>
 <body data-page="{% block page_id %}default{% endblock %}">
 {% include 'includes/header.html' %}
+{% if messages %}
+<div style="max-width: 1200px; margin: 16px auto; padding: 0 16px;">
+    {% for message in messages %}
+    <div style="padding: 12px 14px; margin-bottom: 8px; border-radius: 10px; background: #f3f3f3; border: 1px solid #dedede;">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% block content %}{% endblock %}
 <script src="{% static 'js/utils.js' %}"></script>
 <script src="{% static 'js/share.js' %}"></script>

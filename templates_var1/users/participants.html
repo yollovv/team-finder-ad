@@ -67,6 +67,17 @@
         </div>
         {% endfor %}
     </div>
+    {% if participants.has_other_pages %}
+    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+        {% if participants.has_previous %}
+        <a href="?page={{ participants.previous_page_number }}{% if active_filter %}&filter={{ active_filter }}{% endif %}">Назад</a>
+        {% endif %}
+        <span>Страница {{ participants.number }} из {{ participants.paginator.num_pages }}</span>
+        {% if participants.has_next %}
+        <a href="?page={{ participants.next_page_number }}{% if active_filter %}&filter={{ active_filter }}{% endif %}">Вперёд</a>
+        {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     {% include 'includes/empty-project-card.html' with empty_title="Пока нет участников" empty_message="Попробуйте сбросить фильтр" button_link="/users/list" button_text="Сбросить" %}
     {% endif %}

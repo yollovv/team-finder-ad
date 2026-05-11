@@ -39,6 +39,12 @@
               button.dataset.fav = "true";
             }
           }
+        } else if (response.status === 401) {
+          const data = await response.json();
+          if (confirm("Чтобы добавить проект в избранное, нужно войти. Перейти на страницу входа?")) {
+            const current = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `${data.login_url}?next=${current}`;
+          }
         } else {
           alert("Ошибка при обновлении избранного");
         }
