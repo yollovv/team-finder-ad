@@ -1,8 +1,14 @@
+from http import HTTPStatus
+
 from django.test import TestCase
 from django.urls import reverse
 
 from projects.models import Project
 from users.models import User
+
+
+HTTP_STATUS_OK = HTTPStatus.OK
+HTTP_STATUS_UNAUTHORIZED = HTTPStatus.UNAUTHORIZED
 
 
 class ProjectViewsTests(TestCase):
@@ -27,36 +33,36 @@ class ProjectViewsTests(TestCase):
 
     def test_projects_list_is_available(self):
         response = self.client.get(reverse("projects:list"))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.assertContains(response, "Test project")
 
     def test_toggle_favorite_requires_auth(self):
         response = self.client.post(reverse("projects:toggle-favorite", args=(self.project.pk,)))
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, HTTP_STATUS_UNAUTHORIZED)
 
     def test_toggle_favorite_for_authorized_user(self):
         self.client.force_login(self.member)
         response = self.client.post(reverse("projects:toggle-favorite", args=(self.project.pk,)))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.member.refresh_from_db()
         self.assertTrue(self.member.favorites.filter(pk=self.project.pk).exists())
 
     def test_project_detail_shows_favorite_toggle_for_authenticated_user(self):
         self.client.force_login(self.member)
         response = self.client.get(reverse("projects:detail", args=(self.project.pk,)))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.assertContains(response, "project-fav-icon")
 
     def test_toggle_participate(self):
         self.client.force_login(self.member)
         response = self.client.post(reverse("projects:toggle-participate", args=(self.project.pk,)))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.project.refresh_from_db()
         self.assertTrue(self.project.participants.filter(pk=self.member.pk).exists())
 
     def test_owner_can_complete_project(self):
         self.client.force_login(self.owner)
         response = self.client.post(reverse("projects:complete", args=(self.project.pk,)))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.project.refresh_from_db()
         self.assertEqual(self.project.status, Project.Status.CLOSED)

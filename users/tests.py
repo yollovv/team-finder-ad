@@ -1,8 +1,15 @@
+from http import HTTPStatus
+
 from django.test import TestCase
 from django.urls import reverse
 
 from projects.models import Project
 from users.models import User
+
+
+HTTP_STATUS_OK = HTTPStatus.OK
+FILTER_OWNERS_OF_FAVORITE_PROJECTS = "owners-of-favorite-projects"
+FILTER_PARTICIPANTS_OF_MY_PROJECTS = "participants-of-my-projects"
 
 
 class UserViewsTests(TestCase):
@@ -29,7 +36,7 @@ class UserViewsTests(TestCase):
 
     def test_register_page_available(self):
         response = self.client.get(reverse("users:register"))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
 
     def test_login_with_email(self):
         response = self.client.post(
@@ -37,24 +44,24 @@ class UserViewsTests(TestCase):
             data={"email": "user@example.com", "password": "pass12345"},
             follow=True,
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.assertTrue(response.wsgi_request.user.is_authenticated)
 
     def test_user_detail_page_available(self):
         response = self.client.get(reverse("users:detail", args=(self.user.pk,)))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         self.assertContains(response, "Ivan Ivanov")
 
     def test_users_filter_owners_of_favorite_projects(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse("users:list"), {"filter": "owners-of-favorite-projects"})
-        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("users:list"), {"filter": FILTER_OWNERS_OF_FAVORITE_PROJECTS})
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         participants = response.context["participants"]
         self.assertIn(self.owner, list(participants))
 
     def test_users_filter_participants_of_my_projects(self):
         self.client.force_login(self.owner)
-        response = self.client.get(reverse("users:list"), {"filter": "participants-of-my-projects"})
-        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("users:list"), {"filter": FILTER_PARTICIPANTS_OF_MY_PROJECTS})
+        self.assertEqual(response.status_code, HTTP_STATUS_OK)
         participants = response.context["participants"]
         self.assertIn(self.user, list(participants))

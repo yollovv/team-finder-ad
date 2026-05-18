@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -8,11 +10,17 @@ from django.views.decorators.http import require_POST
 from projects.forms import ProjectForm
 from projects.models import Project
 
+PAGE_SIZE = 12
+
+
+def paginate_queryset(request, queryset, page_size=PAGE_SIZE):
+    paginator = Paginator(queryset, page_size)
+    return paginator.get_page(request.GET.get("page"))
+
 
 def project_list_view(request):
     projects = Project.objects.select_related("owner").prefetch_related("participants")
-    paginator = Paginator(projects, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj = paginate_queryset(request, projects)
     return render(request, "projects/project_list.html", {"projects": page_obj})
 
 
@@ -27,8 +35,7 @@ def project_detail_view(request, pk):
 @login_required
 def favorite_projects_view(request):
     projects = request.user.favorites.select_related("owner").prefetch_related("participants")
-    paginator = Paginator(projects, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj = paginate_queryset(request, projects)
     return render(request, "projects/favorite_projects.html", {"projects": page_obj})
 
 
@@ -76,7 +83,7 @@ def edit_project_view(request, pk):
 @require_POST
 def toggle_favorite_view(request, pk):
     if not request.user.is_authenticated:
-        return JsonResponse({"status": "auth_required", "login_url": "/users/login/"}, status=401)
+        return JsonResponse({"status": "auth_required", "login_url": "/users/login/"}, status=HTTPStatus.UNAUTHORIZED)
 
     project = get_object_or_404(Project, pk=pk)
     if request.user.favorites.filter(pk=project.pk).exists():
@@ -93,9 +100,9 @@ def toggle_favorite_view(request, pk):
 def toggle_participate_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if project.owner_id == request.user.id:
-        return JsonResponse({"status": "error", "detail": "owner_cannot_participate"}, status=400)
+        return JsonResponse({"status": "error", "detail": "owner_cannot_participate"}, status=HTTPStatus.BAD_REQUEST)
     if project.status == Project.Status.CLOSED:
-        return JsonResponse({"status": "error", "detail": "project_closed"}, status=400)
+        return JsonResponse({"status": "error", "detail": "project_closed"}, status=HTTPStatus.BAD_REQUEST)
 
     if project.participants.filter(pk=request.user.pk).exists():
         project.participants.remove(request.user)
@@ -112,7 +119,7 @@ def toggle_participate_view(request, pk):
 def complete_project_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if project.owner_id != request.user.id and not request.user.is_superuser:
-        return JsonResponse({"status": "error", "detail": "forbidden"}, status=403)
+        return JsonResponse({"status": "error", "detail": "forbidden"}, status=HTTPStatus.FORBIDDEN)
     project.status = Project.Status.CLOSED
     project.save(update_fields=("status", "updated_at"))
     return JsonResponse({"status": "ok"})

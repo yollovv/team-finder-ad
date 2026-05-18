@@ -55,12 +55,15 @@ class LoginForm(forms.Form):
         return self.user_cache
 
 
+ABOUT_TEXTAREA_ROWS = 4
+
+
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ("avatar", "name", "surname", "about", "phone", "github_url")
         widgets = {
-            "about": forms.Textarea(attrs={"rows": 4}),
+            "about": forms.Textarea(attrs={"rows": ABOUT_TEXTAREA_ROWS}),
         }
 
 

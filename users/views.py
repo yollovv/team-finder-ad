@@ -12,6 +12,18 @@ from users.forms import (
 )
 from users.models import User
 
+PAGE_SIZE = 12
+
+FILTER_OWNERS_OF_FAVORITE_PROJECTS = "owners-of-favorite-projects"
+FILTER_OWNERS_OF_PARTICIPATING_PROJECTS = "owners-of-participating-projects"
+FILTER_INTERESTED_IN_MY_PROJECTS = "interested-in-my-projects"
+FILTER_PARTICIPANTS_OF_MY_PROJECTS = "participants-of-my-projects"
+
+
+def paginate_queryset(request, queryset, page_size=PAGE_SIZE):
+    paginator = Paginator(queryset, page_size)
+    return paginator.get_page(request.GET.get("page"))
+
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -91,26 +103,25 @@ def users_list_view(request):
 
     if request.user.is_authenticated:
         active_filter = request.GET.get("filter", "")
-        if active_filter == "owners-of-favorite-projects":
+        if active_filter == FILTER_OWNERS_OF_FAVORITE_PROJECTS:
             project_ids = request.user.favorites.values_list("id", flat=True)
             participants_qs = participants_qs.filter(owned_projects__id__in=project_ids)
-        elif active_filter == "owners-of-participating-projects":
+        elif active_filter == FILTER_OWNERS_OF_PARTICIPATING_PROJECTS:
             participants_qs = participants_qs.filter(
                 owned_projects__participants=request.user
             )
-        elif active_filter == "interested-in-my-projects":
+        elif active_filter == FILTER_INTERESTED_IN_MY_PROJECTS:
             my_project_ids = request.user.owned_projects.values_list("id", flat=True)
             participants_qs = participants_qs.filter(
                 favorites__id__in=my_project_ids
             ).exclude(pk=request.user.pk)
-        elif active_filter == "participants-of-my-projects":
+        elif active_filter == FILTER_PARTICIPANTS_OF_MY_PROJECTS:
             my_project_ids = request.user.owned_projects.values_list("id", flat=True)
             participants_qs = participants_qs.filter(
                 participating_projects__id__in=my_project_ids
             ).exclude(pk=request.user.pk)
 
     participants_qs = participants_qs.distinct()
-    paginator = Paginator(participants_qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj = paginate_queryset(request, participants_qs)
     context = {"participants": page_obj, "active_filter": active_filter}
     return render(request, "users/participants.html", context)
